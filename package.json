@@ -19,6 +19,10 @@
   "build": {
     "appId": "com.pomodoro.app",
     "productName": "Pomodoro",
+    "compression": "maximum",
+    "electronLanguages": [
+      "en-US"
+    ],
     "directories": {
       "output": "release",
       "buildResources": "build"
