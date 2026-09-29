@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Alinha a versão do package.json com a tag (v1.2.3 -> 1.2.3)
+      - name: Sync version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Build + package (installer + portable)
+        env:
+          # Sem GH_TOKEN o electron-builder pula a publicação automática
+          # (nós publicamos o release nós mesmos no passo seguinte).
+          GH_TOKEN: ''
+        run: npm run dist
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Pomodoro v$VERSION" \
+            --notes "Pomodoro desktop v$VERSION.
+
+          ## Downloads
+          - **Pomodoro-\${VERSION}-portable.exe** - single file, no installation: just double-click and run
+          - **Pomodoro-Setup-\${VERSION}.exe** - traditional Windows installer (NSIS)
+
+          Note: binaries are not code-signed, so Windows SmartScreen may warn on first run - choose **More info -> Run anyway**." \
+            release/Pomodoro-*.exe
+
+      - name: Upload artifacts (workflow_dispatch runs)
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pomodoro-windows
+          path: |
+            release/*.exe
+          if-no-files-found: error
