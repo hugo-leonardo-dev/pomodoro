@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:" />
+  <title>Pomodoro Mini</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #14120e; --ink: #ede6d8; --ink-dim: #8a8272;
+      --accent: #e8622f; --rule: #2c2820; --rule-strong: #433d31;
+      --radius: 2px; --t: 140ms ease;
+      --mono: 'IBM Plex Mono', Consolas, monospace;
+      --serif: 'Fraunces', Georgia, serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: var(--mono);
+      background: var(--bg);
+      color: var(--ink);
+      user-select: none;
+      cursor: default;
+      -webkit-app-region: drag; /* janela inteira arrastável */
+    }
+    button { -webkit-app-region: no-drag; }
+
+    .mini {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 12px;
+      border-top: 2px solid var(--ink-dim);
+      transition: border-color var(--t);
+    }
+    .mini.study { border-top-color: var(--accent); }
+
+    .row1 { display: flex; align-items: center; gap: 8px; }
+
+    .mode {
+      flex: 1;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      color: var(--ink-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      transition: color var(--t);
+    }
+    .mode.study { color: var(--accent); }
+
+    .mini-btn {
+      width: 22px; height: 20px;
+      border: 0; border-radius: var(--radius);
+      background: transparent;
+      color: var(--ink-dim);
+      font-family: var(--mono);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: color var(--t), background var(--t);
+    }
+    .mini-btn svg { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .mini-btn .ic-play { display: none; }
+    .mini-btn.is-paused .ic-play { display: block; }
+    .mini-btn.is-paused .ic-pause { display: none; }
+    .mini-btn:hover { color: var(--ink); background: #1b1813; }
+    .mini-btn.close:hover { color: #14120e; background: var(--accent); }
+
+    .time {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      font-size: clamp(30px, 22vw, 44px);
+      line-height: 1;
+      letter-spacing: -.03em;
+      color: var(--ink);
+      transition: color var(--t);
+    }
+    .time.study { color: var(--accent); }
+    .time.break { color: var(--ink); }
+    .time.paused { color: var(--ink-dim); }
+    .time.idle { color: var(--ink-dim); }
+
+    .cycle {
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+    }
+  </style>
+</head>
+<body>
+  <div class="mini" id="miniCard">
+    <div class="row1">
+      <span class="mode" id="mode">READY</span>
+      <button class="mini-btn" id="btnPlay" title="Pause/Resume" aria-label="Pause or resume">
+        <svg class="ic-pause" viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9" /></svg>
+        <svg class="ic-play" viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M5 3.5l7 4.5-7 4.5z" /></svg>
+      </button>
+      <button class="mini-btn" id="btnExpand" title="Open main window" aria-label="Open main window">
+        <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5L9 7M6.5 13.5h-4v-4M2.5 13.5L7 9" /></svg>
+      </button>
+      <button class="mini-btn close" id="btnClose" title="Close mini timer" aria-label="Close mini timer">
+        <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+      </button>
+    </div>
+    <div class="time idle" id="time">—</div>
+    <div class="cycle" id="cycle">Cycles: 4</div>
+  </div>
+  <script src="./mini.js"></script>
+</body>
+</html>

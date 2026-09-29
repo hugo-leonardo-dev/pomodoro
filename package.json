@@ -1,0 +1,49 @@
+{
+  "name": "pomodoro",
+  "version": "1.0.0",
+  "description": "Pomodoro desktop for studying, with a YouTube player synced to the timer.",
+  "main": "dist/main/main.js",
+  "author": "Você",
+  "license": "MIT",
+  "scripts": {
+    "dev": "npm run build && electron .",
+    "build": "npm run typecheck && npm run build:main && npm run build:renderer",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:renderer": "tsc -p tsconfig.renderer.json && node scripts/copy-renderer.mjs",
+    "icons": "node scripts/generate-icon.mjs",
+    "predist": "npm run icons",
+    "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit",
+    "start": "electron .",
+    "dist": "npm run build && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.pomodoro.app",
+    "productName": "Pomodoro",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Pomodoro-Setup-${version}.${ext}",
+      "uninstallDisplayName": "Pomodoro"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "electron": "^44.5.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "5.9"
+  }
+}
