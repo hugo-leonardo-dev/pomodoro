@@ -29,9 +29,13 @@
     ],
     "win": {
       "target": [
-        "nsis"
+        "nsis",
+        "portable"
       ],
       "icon": "build/icon.ico"
+    },
+    "portable": {
+      "artifactName": "Pomodoro-${version}-portable.${ext}"
     },
     "nsis": {
       "oneClick": false,
