@@ -114,7 +114,6 @@ const el = {
   statCompleted: $('statCompleted'),
   statTotal: $('statTotal'),
   btnMinimize: $('btnMinimize'),
-  btnMaximize: $('btnMaximize'),
   btnClose: $('btnClose'),
 };
 
@@ -251,6 +250,9 @@ function loadIframeApi(): void {
   }
   const tag = document.createElement('script');
   tag.src = 'https://www.youtube.com/iframe_api';
+  tag.onerror = () => {
+    setVideoStatus('Could not reach YouTube. Check your internet connection.', 'error');
+  };
   document.head.appendChild(tag);
   window.onYouTubeIframeAPIReady = () => {
     ytReady = true;
@@ -272,6 +274,16 @@ function createPlayer(target: { videoId?: string; listId?: string }): void {
   const YT = window.YT;
   if (!YT?.Player) {
     ytPendingLoad = target;
+    // A API ainda está baixando (ou falhou). Em vez de ficar mudo, avisa —
+    // o onYouTubeIframeAPIReady (ou a retry abaixo) conclui o carregamento.
+    if (!ytReady) {
+      setVideoStatus('Loading YouTube player…', 'info');
+      window.setTimeout(() => {
+        if (!window.YT?.Player) {
+          setVideoStatus('YouTube player did not load. Check your internet connection and reload.', 'error');
+        }
+      }, 8000);
+    }
     return;
   }
 
@@ -309,6 +321,7 @@ function createPlayer(target: { videoId?: string; listId?: string }): void {
           100: 'Video not found or private.',
           101: 'This video does not allow embedding. Try another one.',
           150: 'This video does not allow embedding. Try another one.',
+          152: 'This video cannot be played here (embed blocked for this origin). Try another video.',
           153: 'Player configuration error (referrer blocked). If it persists, check antivirus/network proxy.',
         };
         setVideoStatus(map[e.data] ?? `YouTube error (code ${e.data}).`, 'error');
@@ -653,7 +666,6 @@ function bindEvents(): void {
   });
 
   el.btnMinimize.addEventListener('click', () => window.pomo.minimize());
-  el.btnMaximize.addEventListener('click', () => window.pomo.maximize());
   el.btnClose.addEventListener('click', () => window.pomo.close());
 
   // Comandos vindos do mini timer (PIP)

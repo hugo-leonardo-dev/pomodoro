@@ -96,7 +96,7 @@ function saveSettings(settings: AppSettings): void {
 /**
  * O player do YouTube exige que a página incorporadora tenha uma origem HTTP
  * válida (páginas file:// têm origem opaca e recebem o erro 153 do embed).
- * Servimos os assets do renderer por http://127.0.0.1 (loopback, sem firewall),
+ * Servimos os assets do renderer por http://localhost (loopback, sem firewall),
  * o que dá uma origem HTTP real ao app sem quebrar o IPC/preload.
  */
 const MIME_TYPES: Record<string, string> = {
@@ -139,11 +139,14 @@ function startAssetServer(dir: string, preferredPort: number): Promise<string> {
     });
     // Tenta a porta fixa primeiro (origem estável preserva o localStorage entre
     // execuções); se estiver ocupada, avança para as próximas.
+    // Host 'localhost' (e não 127.0.0.1): o player do YouTube valida a origem do
+    // incorporador e rejeita IPs de loopback crus (erro 152), mas aceita
+    // http://localhost:<porta>.
     let port = preferredPort;
     const maxPort = preferredPort + 20;
     const tryListen = (): void => {
-      server.listen(port, '127.0.0.1', () => {
-        resolve(`http://127.0.0.1:${port}`);
+      server.listen(port, 'localhost', () => {
+        resolve(`http://localhost:${port}`);
       });
     };
     server.on('error', (err: NodeJS.ErrnoException) => {
@@ -161,7 +164,7 @@ function startAssetServer(dir: string, preferredPort: number): Promise<string> {
 
 // ---------------------------------------------------------------- window
 let mainWindow: BrowserWindow | null = null;
-let baseUrl = ''; // ex.: http://127.0.0.1:54321 (definido no whenReady)
+let baseUrl = ''; // ex.: http://localhost:54321 (definido no whenReady)
 let assetServer: http.Server | null = null; // guardado p/ fechar no encerramento
 
 function createWindow(): void {
@@ -405,11 +408,15 @@ ipcMain.on('mini:control', (_event, action: string) => {
 
 // ---------------------------------------------------------------- youtube referer fix
 /**
- * Desde as mudanças de política do YouTube (final de 2025), o player incorporado
- * exige um header HTTP Referer válido para autorizar a reprodução (senão: erro 153
- * "Video player configuration error"). Páginas carregadas de file:// têm origem
- * opaca e não enviam Referer. Estampamos um Referer do próprio YouTube nas
- * requisições que saem sem ele — mesmo mecanismo usado por outros apps Electron.
+ * O player incorporado do YouTube exige um header HTTP Referer válido.
+ * Páginas carregadas de file:// têm origem opaca e não enviam Referer (erro 153).
+ * Servir o app por http://localhost resolve a origem, MAS o Referer
+ * "http://localhost:<porta>" também dispara bloqueio (erro 152) em algumas
+ * respostas do YouTube — medido em testes: reescrever para youtube.com falha,
+ * enquanto o Referer real de localhost é aceito.
+ *
+ * Portanto: só garantimos que exista um Referer (caso file:// ou requisições
+ * soltas sem origem); preservamos o valor real do Chromium caso contrário.
  */
 function installYouTubeRefererFix(): void {
   const filter = {
