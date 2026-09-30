@@ -154,6 +154,7 @@ function startAssetServer(dir: string, preferredPort: number): Promise<string> {
         reject(err);
       }
     });
+    assetServer = server;
     tryListen();
   });
 }
@@ -161,6 +162,7 @@ function startAssetServer(dir: string, preferredPort: number): Promise<string> {
 // ---------------------------------------------------------------- window
 let mainWindow: BrowserWindow | null = null;
 let baseUrl = ''; // ex.: http://127.0.0.1:54321 (definido no whenReady)
+let assetServer: http.Server | null = null; // guardado p/ fechar no encerramento
 
 function createWindow(): void {
   const settings = loadSettings();
@@ -214,6 +216,7 @@ function createWindow(): void {
     if (mainWindow && !mainWindow.isDestroyed()) {
       const s = loadSettings();
       s.windowBounds = mainWindow.getBounds();
+      s.miniOpen = !!(miniWindow && !miniWindow.isDestroyed());
       saveSettings(s);
     }
   });
@@ -460,5 +463,15 @@ if (!gotLock) {
 
   app.on('window-all-closed', () => {
     app.quit(); // Windows behavior: quit even without macOS-style override
+  });
+
+  app.on('before-quit', () => {
+    // Garante encerramento limpo: o socket keep-alive do servidor de assets
+    // (navegadores mantêm conexões HTTP persistentes com o renderer)
+    // pode deixar o processo do Electron vivo no Gerenciador de Tarefas.
+    assetServer?.closeAllConnections();
+    assetServer?.close(() => {
+      /* best-effort */
+    });
   });
 }

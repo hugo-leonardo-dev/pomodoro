@@ -1,6 +1,6 @@
 {
   "name": "pomodoro",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Pomodoro desktop for studying, with a YouTube player synced to the timer.",
   "main": "dist/main/main.js",
   "author": "Você",
